@@ -1,5 +1,57 @@
 (function (root) {
 
+
+const COORD_INTEGER_BITS = 14;
+const COORD_FRACTIONAL_BITS = 5;
+const COORD_DENOMINATOR = 1 << COORD_FRACTIONAL_BITS;
+const COORD_RESOLUTION = 1.0 / COORD_DENOMINATOR;
+
+// Special threshold for networking multiplayer origins
+const COORD_INTEGER_BITS_MP = 11;
+const COORD_FRACTIONAL_BITS_MP_LOWPRECISION = 3;
+const COORD_DENOMINATOR_LOWPRECISION = 1 << COORD_FRACTIONAL_BITS_MP_LOWPRECISION;
+const COORD_RESOLUTION_LOWPRECISION = 1.0 / COORD_DENOMINATOR_LOWPRECISION;
+
+const NORMAL_FRACTIONAL_BITS = 11;
+const NORMAL_DENOMINATOR = (1 << NORMAL_FRACTIONAL_BITS) - 1;
+const NORMAL_RESOLUTION = 1.0 / NORMAL_DENOMINATOR;
+
+const MAX_VAR_INT32_BYTES = 5;
+const MASKS = [
+	0,
+	0xFFFFFFFF >> 31,
+	0xFFFFFFFF >> 30,
+	0xFFFFFFFF >> 29,
+	0xFFFFFFFF >> 28,
+	0xFFFFFFFF >> 27,
+	0xFFFFFFFF >> 26,
+	0xFFFFFFFF >> 25,
+	0xFFFFFFFF >> 24,
+	0xFFFFFFFF >> 23,
+	0xFFFFFFFF >> 22,
+	0xFFFFFFFF >> 21,
+	0xFFFFFFFF >> 20,
+	0xFFFFFFFF >> 19,
+	0xFFFFFFFF >> 18,
+	0xFFFFFFFF >> 17,
+	0xFFFFFFFF >> 16,
+	0xFFFFFFFF >> 15,
+	0xFFFFFFFF >> 14,
+	0xFFFFFFFF >> 13,
+	0xFFFFFFFF >> 12,
+	0xFFFFFFFF >> 11,
+	0xFFFFFFFF >> 10,
+	0xFFFFFFFF >> 9,
+	0xFFFFFFFF >> 8,
+	0xFFFFFFFF >> 7,
+	0xFFFFFFFF >> 6,
+	0xFFFFFFFF >> 5,
+	0xFFFFFFFF >> 4,
+	0xFFFFFFFF >> 3,
+	0xFFFFFFFF >> 2,
+	0xFFFFFFFF >> 1,
+	0xFFFFFFFF,
+];
 /**********************************************************
  *
  * BitView
@@ -482,12 +534,282 @@ BitStream.prototype.writeArrayBuffer = function(buffer, byteLength) {
 	this.writeBitStream(new BitStream(buffer), byteLength * 8);
 };
 
+
+BitStream.prototype.readBitsAsBytes = function (this, bits) {
+	const ret = [];
+
+	while (bits >= 8) {
+		ret.push(this.readUint8());
+		bits -= 8;
+	}
+	if (bits > 0) {
+		ret.push(this.readBits(bits));
+	}
+
+	return ret;
+};
+
+BitStream.prototype.readBytes = function (this, bytes) {
+	const arr = new Array(bytes);
+	for (let i = 0; i < bytes; ++i) {
+		arr[i] = this.readUint8();
+	}
+	return Buffer.from(arr);
+};
+
+BitStream.prototype.readOneBit = function (this) {
+	return this.readBits(1, false) === 1;
+};
+
+// BitStream.prototype.readBoolean = function (this) {
+// 	return this.readOneBit();
+// };
+
+BitStream.prototype.readArrayBuffer = function (this, bits) {
+	const bytes = Math.ceil(bits / 8);
+	const result = Buffer.from(new Uint8Array(bytes));
+	let offset = 0;
+	while (bits > 0) {
+		// read up to 8 bits at a time (we may read less at the end if not aligned)
+		const bitsToRead = Math.min(bits, 8);
+		result.writeUInt8(this.readBits(bitsToRead), offset);
+		offset += 1;
+		bits -= bitsToRead;
+	}
+	return result;
+};
+
+BitStream.prototype.readUBitVarFieldPath = function (this) {
+	if (this.readBoolean()) {
+		return this.readBits(2);
+	}
+	if (this.readBoolean()) {
+		return this.readBits(4);
+	}
+	if (this.readBoolean()) {
+		return this.readBits(10);
+	}
+	if (this.readBoolean()) {
+		return this.readBits(17);
+	}
+	return this.readBits(31);
+
+};
+
+BitStream.prototype.readnBits = function (this, n) {
+	const bits = this.readBits(n);
+	return bits & MASKS[n];
+};
+
+BitStream.prototype.readnBytes = function (this, n) {
+	let bytes = [];
+	bytes = this.readBytes(n);
+};
+
+BitStream.prototype.readUBits = BitStream.prototype.readBits;
+
+BitStream.prototype.readSBits = function (this, bits) {
+	return this.readBits(bits, true);
+};
+
+BitStream.prototype.readUBitVar = function (this) {
+	let ret = this.readUBits(6);
+
+	switch (ret & 0x30) {
+		case 16:
+			ret = (ret & 15) | (this.readUBits(4) << 4);
+			break;
+
+		case 32:
+			ret = (ret & 15) | (this.readUBits(8) << 4);
+			break;
+
+		case 48:
+			ret = (ret & 15) | (this.readUBits(32 - 4) << 4);
+			break;
+	}
+
+	return ret;
+};
+
+BitStream.prototype.readBitCoord = function (this) {
+	let intval = this.readOneBit() ? 1 : 0;
+	let fractval = this.readOneBit() ? 1 : 0;
+
+	if (!intval && !fractval) {
+		return 0.0;
+	}
+
+	const signbit = this.readOneBit();
+
+	if (intval) {
+		intval = this.readUBits(COORD_INTEGER_BITS) + 1;
+	}
+
+	if (fractval) {
+		fractval = this.readUBits(COORD_FRACTIONAL_BITS);
+	}
+
+	let value = intval + fractval * COORD_RESOLUTION;
+
+	if (signbit) {
+		value = -value;
+	}
+
+	return value;
+};
+
+BitStream.prototype.readUVarInt32 = function (this) {
+	let result = 0;
+	let count = 0;
+	let bytes;
+
+	do {
+		bytes = this.readBits(8);
+		result |= (bytes & 127) << (7 * count);
+		++count;
+	} while (count < MAX_VAR_INT32_BYTES && (bytes & 0x80) !== 0);
+
+	return result;
+};
+
+BitStream.prototype.readOneByte = function (this) {
+	return this.readBytes(1)[0];
+};
+
+BitStream.prototype.readVarInt32 = function (this) {
+	const result = this.readUVarInt32();
+	return (result >> 1) ^ -(result & 1);
+};
+
+BitStream.prototype.readBitCoordMPNone = function (this) {
+	const inBounds = this.readOneBit();
+	let intval = this.readOneBit() ? 1 : 0;
+	const signbit = this.readOneBit();
+
+	if (intval) {
+		if (inBounds) {
+			intval = this.readUBits(COORD_INTEGER_BITS_MP) + 1;
+		} else {
+			intval = this.readUBits(COORD_INTEGER_BITS) + 1;
+		}
+	}
+
+	const fractval = this.readUBits(COORD_FRACTIONAL_BITS);
+
+	let value = intval + fractval * COORD_RESOLUTION;
+
+	if (signbit) {
+		value = -value;
+	}
+
+	return value;
+};
+
+BitStream.prototype.readBitCoordMPLowPrecision = function (this) {
+	const inBounds = this.readOneBit();
+	let intval = this.readOneBit() ? 1 : 0;
+	const signbit = this.readOneBit();
+
+	if (intval) {
+		if (inBounds) {
+			intval = this.readUBits(COORD_INTEGER_BITS_MP) + 1;
+		} else {
+			intval = this.readUBits(COORD_INTEGER_BITS) + 1;
+		}
+	}
+
+	const fractval = this.readUBits(COORD_FRACTIONAL_BITS_MP_LOWPRECISION);
+
+	let value = intval + fractval * COORD_RESOLUTION_LOWPRECISION;
+
+	if (signbit) {
+		value = -value;
+	}
+
+	return value;
+};
+
+BitStream.prototype.readBitCoordMPIntegral = function (this) {
+	const inBounds = this.readOneBit();
+	if (!this.readOneBit()) {
+		return 0.0;
+	}
+
+	const signbit = this.readOneBit();
+
+	let value;
+	if (inBounds) {
+		value = this.readUBits(COORD_INTEGER_BITS_MP) + 1;
+	} else {
+		value = this.readUBits(COORD_INTEGER_BITS) + 1;
+	}
+
+	if (signbit) {
+		value = -value;
+	}
+
+	return value;
+};
+
+BitStream.prototype.readBitNormal = function (this) {
+	const signbit = this.readOneBit();
+
+	const fractval = this.readUBits(NORMAL_FRACTIONAL_BITS);
+
+	let value = fractval * NORMAL_RESOLUTION;
+
+	if (signbit) {
+		value = -value;
+	}
+
+	return value;
+};
+
+BitStream.prototype.readBitCellCoordNone = function (this, bits) {
+	const intval = this.readUBits(bits);
+	const fractval = this.readUBits(COORD_FRACTIONAL_BITS);
+	return intval + fractval * COORD_RESOLUTION;
+};
+
+BitStream.prototype.readBitCellCoordLowPrecision = function (this, bits) {
+	const intval = this.readUBits(bits);
+	const fractval = this.readUBits(COORD_FRACTIONAL_BITS_MP_LOWPRECISION);
+	return intval + fractval * COORD_RESOLUTION_LOWPRECISION;
+};
+
+BitStream.prototype.readBitCellCoordIntegral = function (this, bits) {
+	return this.readUBits(bits);
+};
+
+BitStream.prototype.readCString = function (this) {
+	let s = '';
+
+	// eslint-disable-next-line no-constant-condition
+	while (true) {
+		const c = this.readUInt8();
+
+		// Stop appending chars once we hit 0x00
+		if (c === 0x00) {
+			break;
+		}
+
+		s += String.fromCharCode(c);
+	}
+
+	return s;
+};
+
+BitStream.from = function from(array) {
+	return new BitStream(array.buffer, array.byteOffset, array.byteLength);
+};
+
 // AMD / RequireJS
 if (typeof define !== 'undefined' && define.amd) {
 	define(function () {
 		return {
 			BitView: BitView,
-			BitStream: BitStream
+			BitStream
 		};
 	});
 }
@@ -495,7 +817,7 @@ if (typeof define !== 'undefined' && define.amd) {
 else if (typeof module !== 'undefined' && module.exports) {
 	module.exports = {
 		BitView: BitView,
-		BitStream: BitStream
+		BitStream
 	};
 }
 
