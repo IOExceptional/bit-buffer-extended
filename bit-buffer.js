@@ -557,7 +557,7 @@ BitStream.prototype.readBytes = function (bytes) {
 	return Buffer.from(arr);
 };
 
-BitStream.prototype.readOneBit = function (this) {
+BitStream.prototype.readOneBit = function () {
 	return this.readBits(1, false) === 1;
 };
 
