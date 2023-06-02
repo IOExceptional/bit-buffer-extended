@@ -48,6 +48,8 @@ declare module 'bit-buffer' {
 	export class BitStream {
 		constructor(source: ArrayBuffer | Buffer | BitView, byteOffset?: number, byteLength?: number)
 
+		static from(source: ArrayBuffer): BitStream;
+
 		readonly length: number;
 		readonly bitsLeft: number;
 		readonly buffer: Buffer;
@@ -111,5 +113,49 @@ declare module 'bit-buffer' {
 		writeBitStream(stream: BitStream, length?: number);
 
 		writeArrayBuffer(buffer: BitStream, length?: number);
+
+		readCString(): string;
+
+		readBitCellCoordIntegral(bits: number): number;
+
+		readBitCellCoordLowPrecision(bits: number): number;
+
+		readBitCellCoordNone(bits: number): number;
+
+		readBitNormal(): number;
+
+		readBitCoordMPIntegral(bits: number): number;
+
+		readBitCoordMPLowPrecision(bits: number): number;
+
+		readBitCoordMPNone(bits: number): number;
+
+		readVarInt32(): number;
+
+		readOneByte(): number;
+
+		readUVarInt32(): number;
+
+		readBitCoord(bits: number): number;
+
+		readUBitVar(): number;
+
+		readSBits(bits: number): number;
+
+		readUBits(bits: number): number;
+
+		readnBytes(length: number): number;
+
+		readnBits(length: number): number;
+
+		readUBitVarFieldPath(bits: number): number;
+
+		readArrayBuffer(length: number): Uint8Array;
+
+		readOneBit(): number;
+
+		readBytes(length: number): Uint8Array;
+
+		readBitsAsBytes(length: number): Uint8Array;
 	}
 }

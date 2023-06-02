@@ -561,10 +561,6 @@ BitStream.prototype.readOneBit = function (this) {
 	return this.readBits(1, false) === 1;
 };
 
-// BitStream.prototype.readBoolean = function (this) {
-// 	return this.readOneBit();
-// };
-
 BitStream.prototype.readArrayBuffer = function (this, bits) {
 	const bytes = Math.ceil(bits / 8);
 	const result = Buffer.from(new Uint8Array(bytes));
