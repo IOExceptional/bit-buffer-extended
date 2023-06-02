@@ -124,11 +124,11 @@ declare module 'bit-buffer' {
 
 		readBitNormal(): number;
 
-		readBitCoordMPIntegral(bits: number): number;
+		readBitCoordMPIntegral(): number;
 
-		readBitCoordMPLowPrecision(bits: number): number;
+		readBitCoordMPLowPrecision(): number;
 
-		readBitCoordMPNone(bits: number): number;
+		readBitCoordMPNone(): number;
 
 		readVarInt32(): number;
 
@@ -136,7 +136,7 @@ declare module 'bit-buffer' {
 
 		readUVarInt32(): number;
 
-		readBitCoord(bits: number): number;
+		readBitCoord(): number;
 
 		readUBitVar(): number;
 
@@ -148,7 +148,7 @@ declare module 'bit-buffer' {
 
 		readnBits(length: number): number;
 
-		readUBitVarFieldPath(bits: number): number;
+		readUBitVarFieldPath(): number;
 
 		readArrayBuffer(length: number): Uint8Array;
 
