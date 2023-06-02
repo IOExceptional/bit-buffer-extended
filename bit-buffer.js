@@ -535,7 +535,7 @@ BitStream.prototype.writeArrayBuffer = function(buffer, byteLength) {
 };
 
 
-BitStream.prototype.readBitsAsBytes = function (this, bits) {
+BitStream.prototype.readBitsAsBytes = function (bits) {
 	const ret = [];
 
 	while (bits >= 8) {
@@ -549,7 +549,7 @@ BitStream.prototype.readBitsAsBytes = function (this, bits) {
 	return ret;
 };
 
-BitStream.prototype.readBytes = function (this, bytes) {
+BitStream.prototype.readBytes = function (bytes) {
 	const arr = new Array(bytes);
 	for (let i = 0; i < bytes; ++i) {
 		arr[i] = this.readUint8();
@@ -561,7 +561,7 @@ BitStream.prototype.readOneBit = function (this) {
 	return this.readBits(1, false) === 1;
 };
 
-BitStream.prototype.readArrayBuffer = function (this, bits) {
+BitStream.prototype.readArrayBuffer = function (bits) {
 	const bytes = Math.ceil(bits / 8);
 	const result = Buffer.from(new Uint8Array(bytes));
 	let offset = 0;
@@ -592,19 +592,19 @@ BitStream.prototype.readUBitVarFieldPath = function (this) {
 
 };
 
-BitStream.prototype.readnBits = function (this, n) {
+BitStream.prototype.readnBits = function (n) {
 	const bits = this.readBits(n);
 	return bits & MASKS[n];
 };
 
-BitStream.prototype.readnBytes = function (this, n) {
+BitStream.prototype.readnBytes = function (n) {
 	let bytes = [];
 	bytes = this.readBytes(n);
 };
 
 BitStream.prototype.readUBits = BitStream.prototype.readBits;
 
-BitStream.prototype.readSBits = function (this, bits) {
+BitStream.prototype.readSBits = function (bits) {
 	return this.readBits(bits, true);
 };
 
@@ -762,19 +762,19 @@ BitStream.prototype.readBitNormal = function (this) {
 	return value;
 };
 
-BitStream.prototype.readBitCellCoordNone = function (this, bits) {
+BitStream.prototype.readBitCellCoordNone = function (bits) {
 	const intval = this.readUBits(bits);
 	const fractval = this.readUBits(COORD_FRACTIONAL_BITS);
 	return intval + fractval * COORD_RESOLUTION;
 };
 
-BitStream.prototype.readBitCellCoordLowPrecision = function (this, bits) {
+BitStream.prototype.readBitCellCoordLowPrecision = function (bits) {
 	const intval = this.readUBits(bits);
 	const fractval = this.readUBits(COORD_FRACTIONAL_BITS_MP_LOWPRECISION);
 	return intval + fractval * COORD_RESOLUTION_LOWPRECISION;
 };
 
-BitStream.prototype.readBitCellCoordIntegral = function (this, bits) {
+BitStream.prototype.readBitCellCoordIntegral = function (bits) {
 	return this.readUBits(bits);
 };
 
