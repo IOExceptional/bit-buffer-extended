@@ -800,6 +800,21 @@ BitStream.prototype.readLeUint64 = function () {
 	return bytes.readBigUint64LE();
 };
 
+BitStream.prototype.readVarUint64 = function () {
+	let x, s;
+	for (i = 0; ; i++) {
+		const b = r.readByte()
+		if (b < 0x80) {
+			if (i > 9 || i == 9 && b > 1) {
+				throw "read overflow: varint overflows uint64"
+			}
+			return x | b<<s
+		}
+		x |= uint64(b&0x7f) << s
+		s += 7
+	}
+};
+
 BitStream.from = function from(array) {
 	return new BitStream(array.buffer, array.byteOffset, array.byteLength);
 };
