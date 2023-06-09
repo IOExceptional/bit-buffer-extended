@@ -609,19 +609,19 @@ BitStream.prototype.readSBits = function (bits) {
 };
 
 BitStream.prototype.readUBitVar = function () {
-	let ret = this.readUBits(6);
+	let ret = this.readBits(6);
 
 	switch (ret & 0x30) {
 		case 16:
-			ret = (ret & 15) | (this.readUBits(4) << 4);
+			ret = (ret & 15) | (this.readBits(4) << 4);
 			break;
 
 		case 32:
-			ret = (ret & 15) | (this.readUBits(8) << 4);
+			ret = (ret & 15) | (this.readBits(8) << 4);
 			break;
 
 		case 48:
-			ret = (ret & 15) | (this.readUBits(32 - 4) << 4);
+			ret = (ret & 15) | (this.readBits(28) << 4);
 			break;
 	}
 
@@ -793,6 +793,11 @@ BitStream.prototype.readCString = function () {
 	}
 
 	return s;
+};
+
+BitStream.prototype.readLeUint64 = function () {
+	const bytes = this.readBytes(8);
+	return bytes.readBigUint64LE();
 };
 
 BitStream.from = function from(array) {
