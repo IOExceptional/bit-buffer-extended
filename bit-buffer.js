@@ -803,7 +803,7 @@ BitStream.prototype.readLeUint64 = function () {
 BitStream.prototype.readVarUint64 = function () {
 	let x, s;
 	for (i = 0; ; i++) {
-		const b = r.readByte()
+		const b = this.readOneByte()
 		if (b < 0x80) {
 			if (i > 9 || i == 9 && b > 1) {
 				throw "read overflow: varint overflows uint64"
