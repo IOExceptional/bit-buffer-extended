@@ -2,10 +2,10 @@ var assert = require('assert'),
 	BitView = require('./bit-buffer').BitView,
 	BitStream = require('./bit-buffer').BitStream;
 
-suite('BitBuffer', function () {
+describe('BitBuffer', function () {
 	var array, bv, bsw, bsr;
 
-	setup(function () {
+	beforeEach(function () {
 		array = new ArrayBuffer(64);
 		bv = new BitView(array);
 		bsw = new BitStream(bv);
@@ -13,7 +13,7 @@ suite('BitBuffer', function () {
 		bsr = new BitStream(array);
 	});
 
-	test('Min / max signed 5 bits', function () {
+	it('Min / max signed 5 bits', function () {
 		var signed_max = (1 << 4) - 1;
 
 		bsw.writeBits(signed_max, 5);
@@ -22,7 +22,7 @@ suite('BitBuffer', function () {
 		assert(bsr.readBits(5, true) === -signed_max - 1);
 	});
 
-	test('Min / max unsigned 5 bits', function () {
+	it('Min / max unsigned 5 bits', function () {
 		var unsigned_max = (1 << 5) - 1;
 
 		bsw.writeBits(unsigned_max, 5);
@@ -31,7 +31,7 @@ suite('BitBuffer', function () {
 		assert.equal(bsr.readBits(5), 1);
 	});
 
-	test('Min / max int8', function () {
+	it('Min / max int8', function () {
 		var signed_max = 0x7F;
 
 		bsw.writeInt8(signed_max);
@@ -40,7 +40,7 @@ suite('BitBuffer', function () {
 		assert.equal(bsr.readInt8(), -signed_max - 1);
 	});
 
-	test('Min / max uint8', function () {
+	it('Min / max uint8', function () {
 		var unsigned_max = 0xFF;
 
 		bsw.writeUint8(unsigned_max);
@@ -49,7 +49,7 @@ suite('BitBuffer', function () {
 		assert.equal(bsr.readUint8(), 1);
 	});
 
-	test('Min / max int16', function () {
+	it('Min / max int16', function () {
 		var signed_max = 0x7FFF;
 
 		bsw.writeInt16(signed_max);
@@ -58,7 +58,7 @@ suite('BitBuffer', function () {
 		assert.equal(bsr.readInt16(), -signed_max - 1);
 	});
 
-	test('Min / max uint16', function () {
+	it('Min / max uint16', function () {
 		var unsigned_max = 0xFFFF;
 
 		bsw.writeUint16(unsigned_max);
@@ -67,7 +67,7 @@ suite('BitBuffer', function () {
 		assert.equal(bsr.readUint16(), 1);
 	});
 
-	test('Min / max int32', function () {
+	it('Min / max int32', function () {
 		var signed_max = 0x7FFFFFFF;
 
 		bsw.writeInt32(signed_max);
@@ -76,7 +76,7 @@ suite('BitBuffer', function () {
 		assert.equal(bsr.readInt32(), -signed_max - 1);
 	});
 
-	test('Min / max uint32', function () {
+	it('Min / max uint32', function () {
 		var unsigned_max = 0xFFFFFFFF;
 
 		bsw.writeUint32(unsigned_max);
@@ -85,7 +85,7 @@ suite('BitBuffer', function () {
 		assert.equal(bsr.readUint32(), 1);
 	});
 
-	test('Unaligned reads', function () {
+	it('Unaligned reads', function () {
 		bsw.writeBits(13, 5);
 		bsw.writeUint8(0xFF);
 		bsw.writeBits(14, 5);
@@ -95,7 +95,7 @@ suite('BitBuffer', function () {
 		assert.equal(bsr.readBits(5), 14);
 	});
 
-	test('Min / max float32 (normal values)', function () {
+	it('Min / max float32 (normal values)', function () {
 		var scratch = new DataView(new ArrayBuffer(8));
 
 		scratch.setUint32(0, 0x00800000);
@@ -111,7 +111,7 @@ suite('BitBuffer', function () {
 		assert.equal(bsr.readFloat32(), max);
 	});
 
-	test('Min / max float64 (normal values)', function () {
+	it('Min / max float64 (normal values)', function () {
 		var scratch = new DataView(new ArrayBuffer(16));
 
 		scratch.setUint32(0, 0x00100000);
@@ -129,14 +129,14 @@ suite('BitBuffer', function () {
 		assert.equal(bsr.readFloat64(), max);
 	});
 
-	test('Overwrite previous value with 0', function () {
+	it('Overwrite previous value with 0', function () {
 		bv.setUint8(0, 13);
 		bv.setUint8(0, 0);
 
 		assert.equal(bv.getUint8(0), 0);
 	});
 
-	test('Read / write ASCII string, fixed length', function () {
+	it('Read / write ASCII string, fixed length', function () {
 		var str = 'foobar';
 		var len = 16;
 
@@ -147,7 +147,7 @@ suite('BitBuffer', function () {
 		assert.equal(bsr.byteIndex, len);
 	});
 
-	test('Read / write ASCII string, unknown length', function () {
+	it('Read / write ASCII string, unknown length', function () {
 		var str = 'foobar';
 
 		bsw.writeASCIIString(str);
@@ -157,7 +157,7 @@ suite('BitBuffer', function () {
 		assert.equal(bsr.byteIndex, str.length + 1);
 	});
 
-	test('Read ASCII string, 0 length', function () {
+	it('Read ASCII string, 0 length', function () {
 		var str = 'foobar';
 
 		bsw.writeASCIIString(str);
@@ -167,7 +167,7 @@ suite('BitBuffer', function () {
 		assert.equal(bsr.byteIndex, 0);
 	});
 
-	test('Read overflow', function () {
+	it('Read overflow', function () {
 		var exception = false;
 
 		try {
@@ -179,7 +179,7 @@ suite('BitBuffer', function () {
 		assert(exception);
 	});
 
-	test('Write overflow', function () {
+	it('Write overflow', function () {
 		var exception = false;
 
 		try {
@@ -191,7 +191,7 @@ suite('BitBuffer', function () {
 		assert(exception);
 	});
 
-	test('Get boolean', function () {
+	it('Get boolean', function () {
 		bv.setUint8(0, 1);
 
 		assert(bv.getBoolean(0));
@@ -200,7 +200,7 @@ suite('BitBuffer', function () {
 		assert(!bv.getBoolean(0));
 	});
 
-	test('Set boolean', function () {
+	it('Set boolean', function () {
 		bv.setBoolean(0, true);
 
 		assert(bv.getBoolean(0));
