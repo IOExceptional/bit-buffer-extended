@@ -801,7 +801,6 @@ BitStream.prototype.readLeUint64 = function () {
 };
 
 BitStream.prototype.readVarUint64 = function () {
-	
 	// Copyright 2023 Skye van Boheemen. All rights reserved. MIT license.
 	let value = 0n;
 	let length = 0;
