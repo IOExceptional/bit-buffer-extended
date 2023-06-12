@@ -831,18 +831,19 @@ BitStream.prototype.readLeUint64 = function () {
 };
 
 BitStream.prototype.readVarUint64 = function () {
-	let x, s;
-	for (i = 0; ; i++) {
-		const b = this.readOneByte()
-		if (b < 0x80) {
-			if (i > 9 || i == 9 && b > 1) {
-				throw "read overflow: varint overflows uint64"
-			}
-			return x | b<<s
-		}
-		x |= uint64(b&0x7f) << s
-		s += 7
+	// Copyright 2023 Skye van Boheemen. All rights reserved. MIT license.
+	let value = 0n;
+	let length = 0;
+	while (true) {
+		const currentByte = BigInt(this.readOneByte());
+		value |= (currentByte & 0x7Fn) << 7n * BigInt(length);
+		length++;
+		if (length > 10) throw new Error("Max Length Reached");
+
+		if ((currentByte & 0x80n) !== 0x80n) break;
 	}
+
+	return value;
 };
 
 BitStream.from = function from(array) {
