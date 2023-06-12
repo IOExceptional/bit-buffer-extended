@@ -749,7 +749,7 @@ BitStream.prototype.readBitCoordMPIntegral = function () {
 };
 
 BitStream.prototype.readBitNormal = function () {
-	const signbit = this.readOneBit();
+	const signbit = this.readBoolean();
 
 	const fractval = this.readUBits(NORMAL_FRACTIONAL_BITS);
 
@@ -760,6 +760,36 @@ BitStream.prototype.readBitNormal = function () {
 	}
 
 	return value;
+};
+
+BitStream.prototype.read3BitNormal = function () {
+	const ret = [0, 0, 0];
+
+	const hasX = this.readBoolean();
+	const hasY = this.readBoolean();
+
+	if (hasX) {
+		ret[0] = this.readBitNormal();
+	}
+
+	if (hasY) {
+		ret[1] = this.readBitNormal();
+	}
+
+	const signbit = this.readBoolean();
+	const prodsum = ret[0] * ret[0] - ret[1] * ret[1];
+
+	if (prodsum < 1.0) {
+		ret[2] = Math.sqrt(1.0 - prodsum);
+	} else {
+		ret[2] = 0.0;
+	}
+
+	if (signbit) {
+		ret[2] = -ret[2];
+	}
+
+	return ret;
 };
 
 BitStream.prototype.readBitCellCoordNone = function (bits) {
