@@ -139,6 +139,8 @@ declare module 'bit-buffer' {
 		readUVarInt32(): number;
 
 		readBitCoord(): number;
+		
+		readBitCoordPrecise(): number;
 
 		readUBitVar(): number;
 

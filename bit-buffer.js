@@ -628,9 +628,37 @@ BitStream.prototype.readUBitVar = function () {
 	return ret;
 };
 
+BitStream.prototype.readBitCoord = function () {
+	let value = 0.0;
+
+	let intval = this.readBits(1);
+	let fractval = this.readBits(1);
+
+	if (intval !== 0 || fractval !== 0) {
+
+		const signbit = this.readBoolean();
+
+		if (intval !== 0) {
+			intval = this.readUBits(COORD_INTEGER_BITS) + 1;
+		}
+
+		if (fractval !== 0) {
+			fractval = this.readUBits(COORD_FRACTIONAL_BITS);
+		}
+
+		value = intval + fractval * COORD_RESOLUTION;
+
+		if (signbit) {
+			value = -value;
+		}
+	}
+
+	return value;
+};
+
 // credit to LaihoE, the outer function that calls this
 // checks the presence of the value, so should now just read it
-BitStream.prototype.readBitCoord = function () {
+BitStream.prototype.readBitCoordPrecise = function () {
 	const signbit = this.readBoolean();
 	const intVal = this.readBits(COORD_INTEGER_BITS);
 	const fracVal = this.readnBits(COORD_FRACTIONAL_BITS);
