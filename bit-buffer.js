@@ -629,30 +629,48 @@ BitStream.prototype.readUBitVar = function () {
 };
 
 BitStream.prototype.readBitCoord = function () {
-	let intval = this.readOneBit() ? 1 : 0;
-	let fractval = this.readOneBit() ? 1 : 0;
+	let value = 0.0;
 
-	if (!intval && !fractval) {
-		return 0.0;
-	}
+	let intval = this.readBits(1);
+	let fractval = this.readBits(1);
 
-	const signbit = this.readOneBit();
+	if (intval !== 0 || fractval !== 0) {
 
-	if (intval) {
-		intval = this.readUBits(COORD_INTEGER_BITS) + 1;
-	}
+		const signbit = this.readBoolean();
 
-	if (fractval) {
-		fractval = this.readUBits(COORD_FRACTIONAL_BITS);
-	}
+		if (intval !== 0) {
+			intval = this.readUBits(COORD_INTEGER_BITS) + 1;
+		}
 
-	let value = intval + fractval * COORD_RESOLUTION;
+		if (fractval !== 0) {
+			fractval = this.readUBits(COORD_FRACTIONAL_BITS);
+		}
 
-	if (signbit) {
-		value = -value;
+		value = intval + fractval * COORD_RESOLUTION;
+
+		if (signbit) {
+			value = -value;
+		}
 	}
 
 	return value;
+};
+
+// credit to LaihoE, the outer function that calls this
+// checks the presence of the value, so should now just read it
+BitStream.prototype.readBitCoordPrecise = function () {
+	const signbit = this.readBoolean();
+	const intVal = this.readBits(COORD_INTEGER_BITS);
+	const fracVal = this.readnBits(COORD_FRACTIONAL_BITS);
+
+	const resol = 1.0 / (1 << 5);
+	let result = (intVal + (fracVal * resol));
+
+	if (signbit) {
+		return -result;
+	}
+
+	return result;
 };
 
 BitStream.prototype.readUVarInt32 = function () {
@@ -749,7 +767,7 @@ BitStream.prototype.readBitCoordMPIntegral = function () {
 };
 
 BitStream.prototype.readBitNormal = function () {
-	const signbit = this.readOneBit();
+	const signbit = this.readBoolean();
 
 	const fractval = this.readUBits(NORMAL_FRACTIONAL_BITS);
 
@@ -760,6 +778,36 @@ BitStream.prototype.readBitNormal = function () {
 	}
 
 	return value;
+};
+
+BitStream.prototype.read3BitNormal = function () {
+	const ret = [0, 0, 0];
+
+	const hasX = this.readBoolean();
+	const hasY = this.readBoolean();
+
+	if (hasX) {
+		ret[0] = this.readBitNormal();
+	}
+
+	if (hasY) {
+		ret[1] = this.readBitNormal();
+	}
+
+	const signbit = this.readBoolean();
+	const prodsum = ret[0] * ret[0] - ret[1] * ret[1];
+
+	if (prodsum < 1.0) {
+		ret[2] = Math.sqrt(1.0 - prodsum);
+	} else {
+		ret[2] = 0.0;
+	}
+
+	if (signbit) {
+		ret[2] = -ret[2];
+	}
+
+	return ret;
 };
 
 BitStream.prototype.readBitCellCoordNone = function (bits) {

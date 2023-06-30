@@ -124,6 +124,8 @@ declare module 'bit-buffer' {
 
 		readBitNormal(): number;
 
+		read3BitNormal(): number[];
+
 		readBitCoordMPIntegral(): number;
 
 		readBitCoordMPLowPrecision(): number;
@@ -137,6 +139,8 @@ declare module 'bit-buffer' {
 		readUVarInt32(): number;
 
 		readBitCoord(): number;
+		
+		readBitCoordPrecise(): number;
 
 		readUBitVar(): number;
 
