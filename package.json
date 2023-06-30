@@ -1,6 +1,6 @@
 {
-  "name": "bit-buffer",
-  "version": "0.2.6",
+  "name": "bit-buffer-extended",
+  "version": "1.0.0",
   "description": "Bit-level reads and writes for ArrayBuffers",
   "main": "bit-buffer.js",
   "types": "./bit-buffer.d.ts",
@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/inolen/bit-buffer.git"
+    "url": "git://github.com/leetify/bit-buffer-extended.git"
   },
   "keywords": [
     "dataview",

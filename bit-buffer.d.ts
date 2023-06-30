@@ -158,8 +158,8 @@ declare module 'bit-buffer' {
 
 		readBitsAsBytes(length: number): Uint8Array;
 
-		readLeUint64(): number;
+		readLeUint64(): bigint;
 
-		readVarUint64(): number;
+		readVarUint64(): bigint;
 	}
 }
