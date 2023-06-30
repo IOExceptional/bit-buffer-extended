@@ -1,4 +1,4 @@
-declare module 'bit-buffer' {
+declare module 'bit-buffer-extended' {
 	import {Buffer} from 'buffer';
 
 	export class BitView {
